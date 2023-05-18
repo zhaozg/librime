@@ -6,6 +6,13 @@ src_dir = $(rime_root)/deps
 glog: build ?= cmake-build
 build ?= build
 
+RIME_OPTIONS  = -DCMAKE_BUILD_TYPE:STRING="Release" \
+	-DCMAKE_INSTALL_PREFIX:PATH="$(rime_root)"
+
+ifdef ANDROID_ABI
+RIME_OPTIONS += -DANDROID_ABI=$(ARCH) -DANDROID_PLATFORM=android-21
+endif
+
 rime_deps = glog gtest leveldb marisa opencc yaml-cpp
 
 .PHONY: all clean-src $(rime_deps)
@@ -27,16 +34,14 @@ glog:
 	-DBUILD_SHARED_LIBS:BOOL=OFF \
 	-DBUILD_TESTING:BOOL=OFF \
 	-DWITH_GFLAGS:BOOL=OFF \
-	-DCMAKE_BUILD_TYPE:STRING="Release" \
-	-DCMAKE_INSTALL_PREFIX:PATH="$(rime_root)" \
+	$(RIME_OPTIONS) \
 	&& cmake --build $(build) --target install
 
 gtest:
 	cd $(src_dir)/googletest; \
 	cmake . -B$(build) \
 	-DBUILD_GMOCK:BOOL=OFF \
-	-DCMAKE_BUILD_TYPE:STRING="Release" \
-	-DCMAKE_INSTALL_PREFIX:PATH="$(rime_root)" \
+	$(RIME_OPTIONS) \
 	&& cmake --build $(build) --target install
 
 leveldb:
@@ -44,23 +49,21 @@ leveldb:
 	cmake . -B$(build) \
 	-DLEVELDB_BUILD_BENCHMARKS:BOOL=OFF \
 	-DLEVELDB_BUILD_TESTS:BOOL=OFF \
-	-DCMAKE_BUILD_TYPE:STRING="Release" \
-	-DCMAKE_INSTALL_PREFIX:PATH="$(rime_root)" \
+	$(RIME_OPTIONS) \
 	&& cmake --build $(build) --target install
 
 marisa:
 	cd $(src_dir)/marisa-trie; \
 	cmake $(src_dir) -B$(build) \
-	-DCMAKE_BUILD_TYPE:STRING="Release" \
-	-DCMAKE_INSTALL_PREFIX:PATH="$(rime_root)" \
+	$(RIME_OPTIONS) \
 	&& cmake --build $(build) --target install
 
 opencc:
 	cd $(src_dir)/opencc; \
 	cmake . -B$(build) \
+	-DBUILD_DOCUMENTATION:BOOL=OFF \
 	-DBUILD_SHARED_LIBS:BOOL=OFF \
-	-DCMAKE_BUILD_TYPE:STRING="Release" \
-	-DCMAKE_INSTALL_PREFIX:PATH="$(rime_root)" \
+	$(RIME_OPTIONS) \
 	&& cmake --build $(build) --target install
 
 yaml-cpp:
@@ -69,6 +72,5 @@ yaml-cpp:
 	-DYAML_CPP_BUILD_CONTRIB:BOOL=OFF \
 	-DYAML_CPP_BUILD_TESTS:BOOL=OFF \
 	-DYAML_CPP_BUILD_TOOLS:BOOL=OFF \
-	-DCMAKE_BUILD_TYPE:STRING="Release" \
-	-DCMAKE_INSTALL_PREFIX:PATH="$(rime_root)" \
+	$(RIME_OPTIONS) \
 	&& cmake --build $(build) --target install

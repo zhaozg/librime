@@ -27,6 +27,12 @@ xcode:
 xcode/%:
 	$(MAKE) -f xcode.mk $(@:xcode/%=%)
 
+android:
+	$(MAKE) -f android.mk
+
+android/%:
+	$(MAKE) -f android.mk $(@:android/%=%)
+
 clean:
 	rm -Rf build debug
 

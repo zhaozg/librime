@@ -30,9 +30,19 @@ build_boost_macos() {
     cd "${BOOST_ROOT}"
     ./bootstrap.sh --with-toolset=clang --with-libraries="${boost_libs}"
     ./b2 -q -a link=static architecture=arm cxxflags="${boost_cxxflags}" stage
-    for lib in stage/lib/*.a; do
-        lipo $lib -info
-    done
+    if [[ "$OSTYPE" =~ 'darwin' ]]; then
+      for lib in stage/lib/*.a; do
+          lipo $lib -info
+      done
+    fi
+}
+
+download_boost_android() {
+    cd "${BOOST_ROOT}"
+    if ! [[ -f "boost_${boost_version}_android.tar.gz" ]]; then
+        curl -LO "https://github.com/zhaozg/Boost-for-Android/releases/download/${boost_version}/boost_${boost_version}_android.tar.gz"
+        tar xzvf boost_${boost_version}_android.tar.gz
+    fi
 }
 
 if [[ $# -eq 0 || " $* " =~ ' --download ' ]]; then
@@ -45,5 +55,8 @@ fi
 if [[ $# -eq 0 || " $* " =~ ' --build ' ]]; then
     if [[ "$OSTYPE" =~ 'darwin' ]]; then
         build_boost_macos
+    fi
+    if [[ -n "$ANDROID_NDK" ]]; then
+      download_boost_android
     fi
 fi

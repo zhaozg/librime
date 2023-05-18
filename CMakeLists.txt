@@ -1,8 +1,8 @@
 set(CMAKE_USER_MAKE_RULES_OVERRIDE ${CMAKE_CURRENT_SOURCE_DIR}/cmake/c_flag_overrides.cmake)
 set(CMAKE_USER_MAKE_RULES_OVERRIDE_CXX ${CMAKE_CURRENT_SOURCE_DIR}/cmake/cxx_flag_overrides.cmake)
 
-project(rime)
 cmake_minimum_required(VERSION 3.12)
+project(rime)
 set(CMAKE_CXX_STANDARD 14)
 
 set(rime_version 1.8.5)
@@ -70,7 +70,11 @@ else()
   set(BOOST_COMPONENTS ${BOOST_COMPONENTS} signals)
 endif()
 
-find_package(Boost 1.46.0 REQUIRED COMPONENTS ${BOOST_COMPONENTS})
+if(NOT boost_version)
+  set(boost_version 1.78.0)
+endif()
+
+find_package(Boost ${boost_version} REQUIRED COMPONENTS ${BOOST_COMPONENTS})
 if(Boost_FOUND)
   include_directories(${Boost_INCLUDE_DIRS})
   link_directories(${Boost_LIBRARY_DIRS})
