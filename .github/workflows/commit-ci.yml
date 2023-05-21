@@ -9,8 +9,12 @@ on:
   pull_request:
 
 jobs:
-  android:
-    uses: ./.github/workflows/android-build.yml
+  trime:
+    uses: ./.github/workflows/trime-build.yml
+
+  #android:
+  #  uses: ./.github/workflows/android-build.yml
+
   #linux:
   #  uses: ./.github/workflows/linux-build.yml
 

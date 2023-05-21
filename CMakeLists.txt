@@ -99,6 +99,13 @@ if(ENABLE_LOGGING)
 
 endif()
 
+if(BUILD_WITH_ICU)
+  find_library(ICU icudata REQUIRED)
+  if(ICU_NOTFOUND)
+    message(FATAL "ICU not found")
+  endif()
+endif()
+
 find_package(Threads)
 
 if(BUILD_TEST)
@@ -268,4 +275,6 @@ if(BUILD_SHARED_LIBS)
   if (BUILD_SAMPLE)
     add_subdirectory(sample)
   endif()
+else()
+  add_subdirectory(librime_jni)
 endif()

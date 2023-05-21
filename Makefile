@@ -5,7 +5,7 @@ prefix ?= $(DESTDIR)/usr
 debug install-debug uninstall-debug test-debug: build ?= debug
 build ?= build
 
-.PHONY: all deps thirdparty xcode clean \
+.PHONY: all deps thirdparty xcode trime clean \
 librime librime-static install-librime uninstall-librime \
 release debug test install uninstall install-debug uninstall-debug
 
@@ -32,6 +32,12 @@ android:
 
 android/%:
 	$(MAKE) -f android.mk $(@:android/%=%)
+
+trime:
+	$(MAKE) -f trime.mk
+
+trime/%:
+	$(MAKE) -f trime.mk $(@:trime/%=%)
 
 clean:
 	rm -Rf build debug

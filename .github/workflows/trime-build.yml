@@ -1,0 +1,110 @@
+name: trime build
+on:
+  workflow_call:
+    inputs:
+      repository:
+        default: ${{ github.repository }}
+        required: false
+        type: string
+      build_variant:
+        required: false
+        type: string
+      rime_plugins:
+        required: false
+        type: string
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch:
+          - arm64-v8a
+          - armeabi-v7a
+          - x86
+          - x86_64
+    env:
+      boost_version: 1.78.0
+      ANDROID_NDK: /usr/local/lib/android/sdk/ndk/25.1.8937393
+      BOOST_ROOT: ${{ github.workspace }}/deps/boost_1_78_0
+      ANDROID_ABI: ${{ matrix.arch }}
+      CMAKE_TOOLCHAIN_FILE: /usr/local/lib/android/sdk/ndk/25.1.8937393/build/cmake/android.toolchain.cmake
+      RIME_PLUGINS: ${{ inputs.rime_plugins }}
+    steps:
+      - name: Setup android SDK
+        uses: android-actions/setup-android@v2
+      - name: Install NDK
+        run: sdkmanager "ndk;25.1.8937393"
+      - name: Checkout last commit
+        uses: actions/checkout@v3
+        with:
+          repository: ${{ inputs.repository }}
+          submodules: recursive
+
+      - name: Configure build environment
+        run: |
+          echo git_ref_name="$(git describe --always)" >> $GITHUB_ENV
+
+      - name: Configure build variant
+        if: contains(inputs.build_variant, '-universal')
+        run: |
+          echo BUILD_UNIVERSAL=1 >> $GITHUB_ENV
+
+      - name: Cache Boost
+        id: cache-boost
+        uses: actions/cache@v3
+        with:
+          path: |
+            ${{ env.BOOST_ROOT }}.tar.bz2
+            ${{ env.BOOST_ROOT }}/stage
+          key: Android-${{ matrix.arch }}-boost-${{ env.boost_version }}
+
+      - name: Extract Boost source tarball
+        if: steps.cache-boost.outputs.cache-hit == 'true'
+        run: |
+          pushd deps
+          tar --bzip2 -xf ${{ env.BOOST_ROOT }}.tar.bz2
+          popd
+
+      - name: Install Boost
+        if: steps.cache-boost.outputs.cache-hit != 'true'
+        run: |
+          ARCH=${{ matrix.arch }} ./install-boost.sh
+
+      - name: Check submodules
+        run: git submodule > submodule-status
+
+      - name: Cache dependencies
+        id: cache-deps
+        uses: actions/cache@v3
+        with:
+          path: |
+            bin
+            include
+            lib
+            share
+          key: trime-${{ matrix.arch }}-${{ inputs.build_variant }}-deps-${{ hashFiles('submodule-status') }}
+
+      - name: Build dependencies
+        if: steps.cache-deps.outputs.cache-hit != 'true'
+        run: |
+          sudo apt-get install -y opencc
+          make trime/deps ARCH=${{ matrix.arch }}
+
+      - name: Install Rime plugins
+        run: ./action-install-plugins-macos.sh
+
+      - name: Build
+        run: make trime/release ARCH=${{ matrix.arch }}
+
+      - name: Create distributable
+        run: |
+          make trime/dist ARCH=${{ matrix.arch }}
+          mkdir -p jniLibs/${{ matrix.arch }}
+          cp build/librime_jni/librime_jni.so jniLibs/${{ matrix.arch }}
+          tar czvf Android-${{ env.git_ref_name }}-trime-${{ matrix.arch }}.tgz jniLibs/${{ matrix.arch }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          path: |
+            Android-${{ env.git_ref_name }}-trime-${{ matrix.arch }}.tgz
